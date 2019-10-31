@@ -143,7 +143,7 @@ def is_pip():
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
-        self.sourcedir = os.path.abspath(sourcedir).replace("\\", "/")
+        self.sourcedir = os.path.abspath(sourcedir)
 
 
 # populated in CMakeBuild.build_extension()
@@ -214,8 +214,8 @@ class CMakeBuild(build_ext):
 
         cmake_args = [
             "-DBUILD_PYTHON_BINDINGS=ON",
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir.replace("\\", "/"),
-            "-DPYTHON_EXECUTABLE=" + sys.executable.replace("\\", "/"),
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
+            "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_EXPORT_COMPILE_COMMANDS={}".format("OFF" if is_pip() else "ON"),
         ]
         cmake_args += shlex.split(args.cmake_args)
@@ -265,11 +265,7 @@ class CMakeBuild(build_ext):
 
         if self.run_cmake(cmake_args):
             subprocess.check_call(
-                shlex.split(
-                    "cmake -H{} -B{}".format(
-                        ext.sourcedir, self.build_temp.replace("\\", "/")
-                    )
-                )
+                ["cmake", "-H" + ext.sourcedir, "-B" + self.build_temp]
                 + cmake_args,
                 env=env,
             )
@@ -278,7 +274,7 @@ class CMakeBuild(build_ext):
             self.create_compile_commands()
 
         subprocess.check_call(
-            shlex.split("cmake --build {}".format(self.build_temp.replace("\\", "/")))
+            ["cmake", "--build", self.build_temp]
             + build_args
         )
         print()  # Add an empty line for cleaner output
@@ -390,7 +386,7 @@ if __name__ == "__main__":
     )
 
     if not args.skip_install_magnum and not is_pip():
-        subprocess.check_call(shlex.split(f"pip install {pymagnum_build_dir}"))
+        subprocess.check_call(["pip", "install", pymagnum_build_dir])
     else:
         print(
             "Assuming magnum bindings are already installed (or we're inside pip and ¯\\_('-')_/¯)"
